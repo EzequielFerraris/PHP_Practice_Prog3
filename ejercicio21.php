@@ -150,7 +150,7 @@ if (isset($_GET["listado"]))
     switch($_GET["listado"])
     {
         case "usuarios":
-            $usuarios = Usuario::mostrarUsuarios();
+            $usuarios = Usuario::mostrarUsuariosCSV();
             echo "<h1>Usuarios</h1>";
             echo "<ul>";
             foreach ($usuarios as $usuario)

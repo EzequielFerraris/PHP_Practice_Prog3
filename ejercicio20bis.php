@@ -137,12 +137,12 @@ class Usuario
     }
 }
 
-/*$nuevoUsuario = new Usuario($_POST["usuario"], $_POST["pass"], $_POST["mail"]);
+$nuevoUsuario = new Usuario($_POST["usuario"], $_POST["pass"], $_POST["mail"]);
 
 echo "<h1>Usuario:</h1><br/>";
 echo "<ul>" . "<li>Usuario: " . $nuevoUsuario->getUsuario() . "</li></br>";
 echo "<li>Mail: " . $nuevoUsuario->getMail() . "</li></br>";
-echo "<li>Guardado en la base de datos: " . $nuevoUsuario->guardarUsuario() .  "</li></br>"
-*/
+echo "<li>Guardado en la base de datos: " . $nuevoUsuario->guardarUsuarioCSV() .  "</li></br>"
+
 
 ?>
