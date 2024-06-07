@@ -1,33 +1,32 @@
 <?php 
 
-include_once "TiendaAlta.php";
+include_once "HeladeriaAlta.php";
 include_once "ArchivosJSON.php";
 include_once "validador.php";
-
 
 date_default_timezone_set("America/Argentina/Buenos_Aires");
 class Venta
 {
     public static string $ruta = "./";
     public static string $nombreArchivo = "ventas.json";
-    public static string $rutaImagenes = './ImagenesDeVenta/2024/';
+    public static string $rutaImagenes = './ImagenesDeLaVenta/2024/';
     private array $_catalogo;
     private array $_ventas;
-    private string $_mail;
-    private string $_nombreConsultado;
+    private string $_saborConsultado;
     private string $_tipoConsultado;
-    private string $_tallaConsultada;
     private int $_stockConsultado;
+    private float $_precio;
+    private string $_vasoConsultado;
+    private string $_mail;
     private int $_ID;
     private int $_numeroPedido;
-    private float $_precio;
     private string $_fecha;
     private bool $_valid = true;
 
-    public function __construct(string $nombre, string $tipo, string $talla, int $stock, float $precio, string $mail, string $date="")
+    public function __construct(string $sabor, string $tipo, int $stock, string $vaso, string $mail, float $precio, string $date="")
     {
-        $this->_catalogo = ArchivosJSON::leerJSON(TiendaAlta::$ruta, TiendaAlta::$nombreArchivo);
-        $this->_ventas = ArchivosJSON::leerJSON(self::$ruta, self::$nombreArchivo);
+        $this->_catalogo = ArchivosJSON::leerJSON(Heladeria::$ruta, Heladeria::$nombreArchivo);
+        $this->_ventas = ArchivosJSON::leerJSON(Venta::$ruta, Venta::$nombreArchivo);
 
         if($date == "")
         {
@@ -47,19 +46,20 @@ class Venta
             
         }
 
-        if(!Validador::es_string($nombre) || !Validador::es_string($tipo) || 
-        !Validador::es_string($talla) || !Validador::es_mail_valido($mail) || 
-        !Validador::es_entero($stock))
+        if(!Validador::es_string($sabor) || !Validador::es_string($tipo) || 
+        !Validador::es_string($vaso) || !Validador::es_mail_valido($mail) || 
+        !Validador::es_entero($stock) || !Validador::es_float($precio))
         {
             $this->_valid = false;
         }
 
-        $this->_nombreConsultado = $nombre;
+        $this->_saborConsultado = $sabor;
         $this->_tipoConsultado = $tipo;
         $this->_stockConsultado = $stock;
-        $this->_tallaConsultada = $talla;
+        $this->_vasoConsultado = $vaso;
+        $this->_mail = $mail;
         $this->_precio = $precio;
-        $this->_mail = $mail;    
+        
         
         if(count($this->_ventas) > 0)
         {
@@ -74,9 +74,9 @@ class Venta
 
     }
 
-    public function getNombre() : string
+    public function getSabor() : string
     {
-        return $this->_nombreConsultado;
+        return $this->_saborConsultado;
     }
 
     public function getTipo() : string
@@ -84,9 +84,9 @@ class Venta
         return $this->_tipoConsultado;
     }
 
-    public function getTalla() : string
+    public function getVaso() : string
     {
-        return $this->_tallaConsultada;
+        return $this->_vasoConsultado;
     }
 
     public function getStock() : int
@@ -129,16 +129,6 @@ class Venta
         return $this->_valid;
     }
 
-    
-    public function getData() : array
-    {
-        $data = array("nombre"=>$this->_nombreConsultado, "tipo"=>$this->_tipoConsultado, 
-        "stock"=>$this->_stockConsultado, "talla"=>$this->_tallaConsultada, "precio"=>$this->_precio,
-        "mail"=>$this->_mail, "fecha"=>$this->_fecha, "numero_pedido"=>$this->_numeroPedido, "ID"=>$this->_ID);
-        
-        return $data;
-    }
-
     public function getNombreUsuario() : string
     {
         $nombreUsuario = strstr($this->_mail, '@', true);
@@ -147,15 +137,31 @@ class Venta
 
     public function getNombreImagenVenta() : string
     {
-        $fileName = $this->_nombreConsultado . $this->_tipoConsultado . 
+        $fileName = $this->_saborConsultado . $this->_tipoConsultado . 
                     $this->_stockConsultado . $this->getNombreUsuario() . $this->_fecha;
 
         return $fileName;
     }
+
+    public function calcularImporteTotal()
+    {
+        return $this->getStock() * $this->getPrecio();
+    }
+    
+    public function getData() : array
+    {
+        $data = array("sabor"=>$this->_saborConsultado, "tipo"=>$this->_tipoConsultado, 
+        "stock"=>$this->_stockConsultado, "vaso"=>$this->_vasoConsultado, "mail"=>$this->_mail, 
+        "precio"=>$this->_precio, "fecha"=>$this->_fecha, "numero_pedido"=>$this->_numeroPedido, 
+        "ID"=>$this->_ID);
+        
+        return $data;
+    }
+
     public function realizarVenta()
     {
-        $this->_catalogo = ArchivosJSON::leerJSON(TiendaAlta::$ruta, TiendaAlta::$nombreArchivo);
-        $this->_ventas = ArchivosJSON::leerJSON(self::$ruta, self::$nombreArchivo);
+        $this->_catalogo = ArchivosJSON::leerJSON(Heladeria::$ruta, Heladeria::$nombreArchivo);
+        $this->_ventas = ArchivosJSON::leerJSON(Venta::$ruta, Venta::$nombreArchivo);
         
         $resutado = false;
         $hay = false;
@@ -163,19 +169,20 @@ class Venta
         foreach($this->_catalogo as $val => $p1)
         {
                         
-            if($this->_nombreConsultado == $p1["nombre"] && $this->_tipoConsultado == $p1["tipo"] 
-                && $p1["stock"] >= $this->_stockConsultado && $this->_tallaConsultada == $p1["talla"])
+            if($this->_saborConsultado == $p1["sabor"] && $this->_tipoConsultado == $p1["tipo"] 
+                && $p1["stock"] >= $this->_stockConsultado && $this->_vasoConsultado == $p1["vaso"]
+                && $this->_precio == $p1["precio"])
             {
                 $hay = true;
-                $prenda = new TiendaAlta($p1["nombre"], $p1["precio"], $p1["tipo"], $p1["talla"], $p1["color"]);
+                $helado = new Heladeria($p1["sabor"], $p1["precio"], $p1["tipo"], $p1["vaso"]);
                 break;
             }
         }
 
         if($hay)
         {
-            $prenda->setStock(-($this->_stockConsultado));
-            $t = $prenda->guardarPrendaJSON();
+            $helado->setStock(-($this->_stockConsultado));
+            $t = $helado->guardarHeladoJSON();
             if($t)
             {
                 echo "Vendiendo...";
@@ -211,5 +218,7 @@ class Venta
 
     } 
 
+    
 }
+
 ?>

@@ -44,7 +44,7 @@ abstract class Validador
 
         return $result;
     }
-    public static function mail_valido(string $par) : bool
+    public static function es_mail_valido(string $par) : bool
     {
         $result = false;
 
@@ -60,7 +60,7 @@ abstract class Validador
     {
         $result = false;
 
-        if(ctype_alpha($par))
+        if(is_string($par))
         {
             $result = true;
         }

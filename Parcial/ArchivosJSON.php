@@ -21,7 +21,7 @@ class ArchivosJSON
         {
             $rutaCompleta = $ruta . $nombreArchivo;
 
-            if (file_exists($rutaCompleta))
+            if (file_exists($rutaCompleta) && filesize($rutaCompleta) > 0)
             {
                 try
                 {
@@ -42,8 +42,23 @@ class ArchivosJSON
                     echo "<br/>";
                 }
             }
+            else
+            {
+                try
+                {
+                    $file = fopen($rutaCompleta, "w");
+        
+                    fclose($file);
+
+                }
+                catch(Exception $e)
+                {
+                    echo "<br/>";
+                    echo "". $e->getMessage() ."";
+                    echo "<br/>";
+                }
+            }
             
-           
         }
         return $resultado;
     }

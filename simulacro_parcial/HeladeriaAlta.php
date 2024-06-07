@@ -4,7 +4,9 @@ include_once "validador.php";
 include_once "ArchivosJSON.php";
 class Heladeria
 {
-
+    public static string $nombreArchivo = "heladeria.json";
+    public static string $rutaImagenes = './ImagenesDeHelados/2024/';
+    public static $ruta = "./";
     private string $_sabor;
     private float $_precio;
     private string $_tipo;
@@ -18,48 +20,44 @@ class Heladeria
 
     public function __construct(string $sabor, float $precio, string $tipo, string $vaso, int $stock=0, int $ID = 0)
     {
-        $p2 = ArchivosJSON::leerJSON("./", "heladeria.json");
+        $p2 = ArchivosJSON::leerJSON(Heladeria::$ruta, Heladeria::$nombreArchivo);
        
         if(count($p2) > 0)
         {
             foreach ($p2 as $helado)
             {
                 
-                if($helado["sabor"] == $sabor && $helado["tipo"] == $tipo)
+                if($helado["sabor"] == $sabor && $helado["tipo"] == $tipo && $helado["vaso"] == $vaso)
                 {                 
-                    $this->_stock = (int)$helado["stock"];
                     $this->_exists = true;
+                    $this->_ID = $helado["ID"];
                     break;
                 }        
             }
-        }
-
-        $this->_sabor = $sabor;
-        $this->_precio = (float)$precio;
-        $this->_tipo = $tipo;
-        $this->_vaso = $vaso;
-        if($this->_exists)
-        {
-            $sum = $this->setStock($stock); 
-            if(!$sum)
+            if(!$this->_exists)
             {
-                $this->_valid = false;
+                $this->_ID = end($p2)["ID"] + 1;
             }
         }
         else
         {
-            $this->_stock = $stock;
+            $this->_ID = 1; 
         }
-        if($ID == 0)
+
+        if(!Validador::es_string($sabor) || !Validador::es_float($precio) || 
+            !Validador::es_string($tipo) || !Validador::es_string($vaso) || 
+            !Validador::es_entero($stock))
         {
-            $this->_ID = rand(1, 10000);
+            $this->_valid = false;
         }
-        else
-        {
-            $this->_ID = $ID;
-        }
-        
+
+        $this->_sabor = $sabor;
+        $this->_precio = $precio;
+        $this->_tipo = $tipo;
+        $this->_vaso = $vaso;
+        $this->_stock = $stock; 
     }
+
     public function getSabor() : string
     {
         return $this->_sabor;
@@ -90,10 +88,20 @@ class Heladeria
         return $this->_ID;
     }
 
+    public function getValid() : bool
+    {
+        return $this->_valid;
+    }
+
+    public function getExiste() : bool
+    {
+        return $this->_exists;
+    }
+
     public function setStock(int $stock): bool
     {
         $result =  false;
-        if(($this->_stock + $stock) >= 0)
+        if(Validador::es_entero($stock))
         {
             $this->_stock += $stock;
             $result =  true;
@@ -110,22 +118,21 @@ class Heladeria
         return $data;
     }
 
-    public function guardarHeladoJSON(string $ruta)
+    public function guardarHeladoJSON() : bool
     {
-        $nombreArchivo = "heladeria.json";
-        $mensaje = "Uno o más de los campos está vacío o es incorrecto. Cambie la información necesaria e inténtelo nuevamente.";
-        $listaHelados = ArchivosJSON::leerJSON("./", "heladeria.json");
+        $result = false;
+        
+        $listaHelados = ArchivosJSON::leerJSON(Heladeria::$ruta, Heladeria::$nombreArchivo);
 
         if($this->_exists && $this->_valid)
         {
             //SI EXISTE YA EN STOCK
-            
             $data = $this->getData();
             $indice = Null; 
             foreach($listaHelados as $val => $p1)
             {
                 
-                if($data["sabor"] == $p1["sabor"] && $data["tipo"] == $p1["tipo"])
+                if($data["sabor"] == $p1["sabor"] && $data["tipo"] == $p1["tipo"] && $data["vaso"] == $p1["vaso"])
                 {
                     $indice = $val;
                     break;
@@ -133,12 +140,25 @@ class Heladeria
  
             }
 
-            $listaHelados[$indice]["stock"] = $data["stock"];
-            $listaHelados[$indice]["precio"] = $data["precio"];
-           
-            $escribir = ArchivosJSON::escribirJSON($ruta, $nombreArchivo, $listaHelados);
+            $condicion2 = ($data["stock"] < 0) && (-($data["stock"]) <= $listaHelados[$indice]["stock"]);
             
-            if($escribir){ echo "Producto ACTUALIZADO"; }
+            if($data["stock"] > 0 || $condicion2)
+            {
+                $listaHelados[$indice]["stock"] += $data["stock"];
+                $listaHelados[$indice]["precio"] = $data["precio"];
+                $escribir = ArchivosJSON::escribirJSON(Heladeria::$ruta, Heladeria::$nombreArchivo, $listaHelados);
+            
+                if($escribir)
+                { 
+                    echo "Producto ACTUALIZADO</br>"; 
+                    $result = true;
+                }
+                
+            }
+            else
+            {
+                echo "No se cuenta con la cantidad necesaria para actualizar el stock</br>";
+            }
 
         }
         else if ($this->_valid)
@@ -157,17 +177,22 @@ class Heladeria
                         array_push($listaHelados, $data);
                     }
 
-                $escribir = ArchivosJSON::escribirJSON($ruta, $nombreArchivo, $listaHelados);
+                $escribir = ArchivosJSON::escribirJSON(Heladeria::$ruta, Heladeria::$nombreArchivo, $listaHelados);
             
-                if($escribir){ echo "Producto AGREGADO"; }
+                if($escribir)
+                { 
+                    echo "Producto AGREGADO</br>"; 
+                    $result = true;
+                }
+                
             }
             else
             {
-                $mensaje = "NO SE PUDO REGISTRAR, PRODUCTO INVÁLIDO";
+                echo "NO SE PUDO REGISTRAR, PRODUCTO INVÁLIDO</br>";
             }
-
-            return $mensaje;
+ 
         }
+        return $result;
     }
     
 

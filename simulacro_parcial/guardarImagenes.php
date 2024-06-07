@@ -4,17 +4,15 @@ include_once "validador.php";
 class guardadorDeImagenes
 {
 
-    public function guardarImagen(string $fileName, int $max_size)
+    public static function guardarImagen(string $ruta, string $fileName, int $max_size)
     {
-        if(is_string($fileName) && Validador::es_entero_positivo($max_size))
+        if( Validador::es_string($fileName) && Validador::es_entero_positivo($max_size))
         {
             if(isset($_FILES['archivo']))
             {
-                $carpetaImg = './ImagenesDeHelados/2024/';
+                $carpetaImg = $ruta;
                 $fileType = $_FILES['archivo']['type'];
                 $fileSize = $_FILES['archivo']['size'];
-
-                $route = $carpetaImg . $fileName;
 
                 if (!((strpos($fileType, "png") || strpos($fileType, "jpeg")))) 
                 {
@@ -26,6 +24,15 @@ class guardadorDeImagenes
                 }
                 else
                 {
+                    $route = $carpetaImg . $fileName;
+                    if(strpos($fileType, "png"))
+                    {
+                        $route = $route . ".png";
+                    }
+                    else
+                    {
+                        $route = $route . ".jpg";
+                    }
                     if (move_uploaded_file($_FILES['archivo']['tmp_name'],  $route))
                     {
                         echo "El archivo ha sido cargado correctamente.";
